@@ -24,7 +24,7 @@ cp src/main/resources/application.properties.example src/main/resources/applicat
 
 Edite o arquivo conforme seu ambiente (banco de dados, issuer JWT, etc.).
 
-> O `application.properties` está no `.gitignore` — o `.example` serve como template documentado com todas as opções disponíveis.
+> O `application.properties` é versionado com defaults seguros para desenvolvimento. Variáveis de ambiente sobrescrevem qualquer valor em produção. O `.example` serve como referência com todas as opções documentadas.
 
 ### 2. Gerar chaves JWT
 
@@ -75,6 +75,8 @@ docker run -p 8080:8080 \
   -e QUARKUS_DATASOURCE_USERNAME=techmart \
   -e QUARKUS_DATASOURCE_PASSWORD=techmart \
   -e QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION=update \
+  -e QUARKUS_HTTP_CORS=true \
+  -e QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173 \
   techmart
 ```
 
