@@ -7,6 +7,7 @@ import br.zernis.exception.NotFoundException;
 import br.zernis.repository.OrderRepository;
 import br.zernis.repository.ProductRepository;
 import br.zernis.repository.UserRepository;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -27,6 +28,9 @@ import static org.mockito.Mockito.*;
 class OrderServiceTest {
 
     @Mock
+    JsonWebToken jwt;
+
+    @Mock
     OrderRepository orderRepository;
 
     @Mock
@@ -41,9 +45,11 @@ class OrderServiceTest {
     @Captor
     ArgumentCaptor<Order> orderCaptor;
 
-    private User createUser(UUID id, UserRole role) {
+    private final UUID userId = UUID.randomUUID();
+
+    private User createUser(UserRole role) {
         User u = new User();
-        u.setId(id);
+        u.setId(userId);
         u.setEmail("user@email.com");
         u.setRole(role);
         return u;
@@ -61,15 +67,15 @@ class OrderServiceTest {
 
     @Test
     void listByBuyer_withExistingBuyer_returnsOrders() {
-        UUID buyerId = UUID.randomUUID();
-        User buyer = createUser(buyerId, UserRole.USER);
+        User buyer = createUser(UserRole.USER);
         Order order = new Order();
         order.setBuyer(buyer);
 
-        when(userRepository.findByIdOptional(buyerId)).thenReturn(Optional.of(buyer));
+        when(jwt.getSubject()).thenReturn(userId.toString());
+        when(userRepository.findByIdOptional(userId)).thenReturn(Optional.of(buyer));
         when(orderRepository.list("buyer", buyer)).thenReturn(List.of(order));
 
-        List<Order> result = orderService.listByBuyer(buyerId);
+        List<Order> result = orderService.listByBuyer();
 
         assertEquals(1, result.size());
         assertEquals(buyer, result.getFirst().getBuyer());
@@ -77,28 +83,28 @@ class OrderServiceTest {
 
     @Test
     void listByBuyer_withNonExistingBuyer_throwsNotFoundException() {
-        UUID buyerId = UUID.randomUUID();
-        when(userRepository.findByIdOptional(buyerId)).thenReturn(Optional.empty());
+        when(jwt.getSubject()).thenReturn(userId.toString());
+        when(userRepository.findByIdOptional(userId)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> orderService.listByBuyer(buyerId));
+        assertThrows(NotFoundException.class, () -> orderService.listByBuyer());
     }
 
     @Test
-    void buy_withSellerRole_createsOrder() {
-        UUID buyerId = UUID.randomUUID();
-        User seller = createUser(buyerId, UserRole.SELLER);
+    void buy_withUserRole_createsOrder() {
+        User user = createUser(UserRole.USER);
 
         UUID productId = UUID.randomUUID();
         Product product = createProduct(productId, "Notebook", 10, BigDecimal.valueOf(4500));
 
         OrderItemRequestDTO itemDTO = new OrderItemRequestDTO(productId, 2);
 
-        when(userRepository.findByIdOptional(buyerId)).thenReturn(Optional.of(seller));
+        when(jwt.getSubject()).thenReturn(userId.toString());
+        when(userRepository.findByIdOptional(userId)).thenReturn(Optional.of(user));
         when(productRepository.findByIdOptional(productId)).thenReturn(Optional.of(product));
 
-        Order result = orderService.buy(buyerId, List.of(itemDTO));
+        Order result = orderService.buy(List.of(itemDTO));
 
-        assertEquals(seller, result.getBuyer());
+        assertEquals(user, result.getBuyer());
         assertEquals(BigDecimal.valueOf(9000), result.getTotalPrice());
         assertEquals(1, result.getItems().size());
 
@@ -116,8 +122,7 @@ class OrderServiceTest {
 
     @Test
     void buy_withMultipleItems_calculatesTotalCorrectly() {
-        UUID buyerId = UUID.randomUUID();
-        User seller = createUser(buyerId, UserRole.SELLER);
+        User user = createUser(UserRole.USER);
 
         UUID p1Id = UUID.randomUUID();
         UUID p2Id = UUID.randomUUID();
@@ -127,11 +132,12 @@ class OrderServiceTest {
         OrderItemRequestDTO item1 = new OrderItemRequestDTO(p1Id, 2);
         OrderItemRequestDTO item2 = new OrderItemRequestDTO(p2Id, 3);
 
-        when(userRepository.findByIdOptional(buyerId)).thenReturn(Optional.of(seller));
+        when(jwt.getSubject()).thenReturn(userId.toString());
+        when(userRepository.findByIdOptional(userId)).thenReturn(Optional.of(user));
         when(productRepository.findByIdOptional(p1Id)).thenReturn(Optional.of(p1));
         when(productRepository.findByIdOptional(p2Id)).thenReturn(Optional.of(p2));
 
-        Order result = orderService.buy(buyerId, List.of(item1, item2));
+        Order result = orderService.buy(List.of(item1, item2));
 
         assertEquals(BigDecimal.valueOf(4500 * 2 + 150 * 3), result.getTotalPrice());
         assertEquals(2, result.getItems().size());
@@ -139,59 +145,59 @@ class OrderServiceTest {
 
     @Test
     void buy_withNonExistingUser_throwsNotFoundException() {
-        UUID buyerId = UUID.randomUUID();
-        when(userRepository.findByIdOptional(buyerId)).thenReturn(Optional.empty());
+        when(jwt.getSubject()).thenReturn(userId.toString());
+        when(userRepository.findByIdOptional(userId)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class,
-                () -> orderService.buy(buyerId, List.of()));
+                () -> orderService.buy(List.of()));
     }
 
     @Test
-    void buy_withUserRole_throwsInvalidOperationException() {
-        UUID buyerId = UUID.randomUUID();
-        User user = createUser(buyerId, UserRole.USER);
+    void buy_withSellerRole_throwsInvalidOperationException() {
+        User seller = createUser(UserRole.SELLER);
 
-        when(userRepository.findByIdOptional(buyerId)).thenReturn(Optional.of(user));
+        when(jwt.getSubject()).thenReturn(userId.toString());
+        when(userRepository.findByIdOptional(userId)).thenReturn(Optional.of(seller));
 
         assertThrows(InvalidOperationException.class,
-                () -> orderService.buy(buyerId, List.of()));
+                () -> orderService.buy(List.of()));
     }
 
     @Test
     void buy_withAdminRole_throwsInvalidOperationException() {
-        UUID buyerId = UUID.randomUUID();
-        User admin = createUser(buyerId, UserRole.ADMIN);
+        User admin = createUser(UserRole.ADMIN);
 
-        when(userRepository.findByIdOptional(buyerId)).thenReturn(Optional.of(admin));
+        when(jwt.getSubject()).thenReturn(userId.toString());
+        when(userRepository.findByIdOptional(userId)).thenReturn(Optional.of(admin));
 
         assertThrows(InvalidOperationException.class,
-                () -> orderService.buy(buyerId, List.of()));
+                () -> orderService.buy(List.of()));
     }
 
     @Test
     void buy_withNonExistingProduct_throwsNotFoundException() {
-        UUID buyerId = UUID.randomUUID();
-        User seller = createUser(buyerId, UserRole.SELLER);
+        User user = createUser(UserRole.USER);
         UUID productId = UUID.randomUUID();
 
-        when(userRepository.findByIdOptional(buyerId)).thenReturn(Optional.of(seller));
+        when(jwt.getSubject()).thenReturn(userId.toString());
+        when(userRepository.findByIdOptional(userId)).thenReturn(Optional.of(user));
         when(productRepository.findByIdOptional(productId)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class,
-                () -> orderService.buy(buyerId, List.of(new OrderItemRequestDTO(productId, 1))));
+                () -> orderService.buy(List.of(new OrderItemRequestDTO(productId, 1))));
     }
 
     @Test
     void buy_withInsufficientQuantity_throwsInvalidOperationException() {
-        UUID buyerId = UUID.randomUUID();
-        User seller = createUser(buyerId, UserRole.SELLER);
+        User user = createUser(UserRole.USER);
         UUID productId = UUID.randomUUID();
         Product product = createProduct(productId, "Notebook", 2, BigDecimal.valueOf(100));
 
-        when(userRepository.findByIdOptional(buyerId)).thenReturn(Optional.of(seller));
+        when(jwt.getSubject()).thenReturn(userId.toString());
+        when(userRepository.findByIdOptional(userId)).thenReturn(Optional.of(user));
         when(productRepository.findByIdOptional(productId)).thenReturn(Optional.of(product));
 
         assertThrows(InvalidOperationException.class,
-                () -> orderService.buy(buyerId, List.of(new OrderItemRequestDTO(productId, 5))));
+                () -> orderService.buy(List.of(new OrderItemRequestDTO(productId, 5))));
     }
 }

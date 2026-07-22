@@ -14,7 +14,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.UUID;
 
-@Path("/api/orders")
+@Path("/orders")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class OrderResource {
@@ -23,20 +23,18 @@ public class OrderResource {
     OrderService orderService;
 
     @POST
-    @Path("/{id}")
-    @RolesAllowed("SELLER")
-    public Response createOrder(@Valid CreateOrderDTO dto, @PathParam("id") UUID id) {
-        Order order = orderService.buy(id, dto.items());
+    @RolesAllowed("USER")
+    public Response createOrder(@Valid CreateOrderDTO dto) {
+        Order order = orderService.buy(dto.items());
         return Response.status(Response.Status.CREATED)
                 .entity(OrderResponseDTO.fromEntity(order))
                 .build();
     }
 
     @GET
-    @Path("/list/{id}")
-    @RolesAllowed("SELLER")
-    public List<OrderResponseDTO> listOrdersByBuyer(@PathParam("id") UUID id) {
-        return orderService.listByBuyer(id).stream()
+    @RolesAllowed("USER")
+    public List<OrderResponseDTO> listOrders() {
+        return orderService.listByBuyer().stream()
                 .map(OrderResponseDTO::fromEntity)
                 .toList();
     }

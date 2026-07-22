@@ -62,14 +62,29 @@ quarkus.hibernate-orm.database.generation=update
 ./mvnw package -Pnative -DskipTests
 ```
 
+### 6. Docker
+
+```bash
+# Build da imagem
+docker build -t techmart .
+
+# Executar (substitua pelas suas configs de banco)
+docker run -p 8080:8080 \
+  -e QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://host.docker.internal:5432/techmart \
+  -e QUARKUS_DATASOURCE_USERNAME=techmart \
+  -e QUARKUS_DATASOURCE_PASSWORD=techmart \
+  -e QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION=update \
+  techmart
+```
+
 ---
 
 ## Roles
 
 | Role | Descrição |
 |------|-----------|
-| `USER` | Acesso básico (apenas leitura de produtos) |
-| `SELLER` | Gerencia produtos e pedidos |
+| `USER` | Cliente — realiza compras e consulta produtos |
+| `SELLER` | Vendedor — gerencia produtos e visualiza vendas |
 | `ADMIN` | (reservado para futuras funcionalidades) |
 
 ---
@@ -133,9 +148,9 @@ Autentica e retorna um JWT.
 
 ### Produtos
 
-#### `GET /api/products` — `@Authenticated`
+#### `GET /products` — `@Authenticated`
 
-Lista todos os produtos.
+Lista todos os produtos (qualquer usuário logado).
 
 **Response (200):**
 ```json
@@ -155,7 +170,7 @@ Lista todos os produtos.
 
 ---
 
-#### `GET /api/products/{id}` — `@Authenticated`
+#### `GET /products/{id}` — `@Authenticated`
 
 Detalhes de um produto.
 
@@ -164,7 +179,7 @@ Detalhes de um produto.
 
 ---
 
-#### `POST /api/products` — `SELLER`
+#### `POST /products` — `SELLER`
 
 Cria um produto.
 
@@ -182,7 +197,7 @@ Cria um produto.
 
 ---
 
-#### `PUT /api/products/{id}` — `SELLER`
+#### `PUT /products/{id}` — `SELLER`
 
 Atualiza um produto (mesmo body do create).
 
@@ -191,7 +206,7 @@ Atualiza um produto (mesmo body do create).
 
 ---
 
-#### `DELETE /api/products/{id}` — `SELLER`
+#### `DELETE /products/{id}` — `SELLER`
 
 Remove um produto (apenas se não foi vendido).
 
@@ -202,7 +217,7 @@ Remove um produto (apenas se não foi vendido).
 
 ### Usuários
 
-#### `GET /api/users` — `SELLER`
+#### `GET /users` — `SELLER`
 
 Lista todos os usuários.
 
@@ -222,17 +237,17 @@ Lista todos os usuários.
 
 ---
 
-#### `GET /api/users/{id}` — `SELLER`
+#### `GET /users/{id}` — `SELLER`
 
 Detalhes de um usuário.
 
 ---
 
-### Pedidos
+### Compras (Cliente)
 
-#### `POST /api/orders/{buyerId}` — `SELLER`
+#### `POST /orders` — `USER`
 
-Cria um pedido para um comprador.
+Realiza uma compra. O comprador é extraído automaticamente do token JWT.
 
 **Request:**
 ```json
@@ -265,19 +280,19 @@ Cria um pedido para um comprador.
 
 ---
 
-#### `GET /api/orders/list/{buyerId}` — `SELLER`
+#### `GET /orders` — `USER`
 
-Lista pedidos de um comprador específico.
+Lista os pedidos do cliente autenticado.
 
 ---
 
 ### Vendas (Seller)
 
-#### `GET /api/seller/sales` — `SELLER`
+#### `GET /seller/sales` — `SELLER`
 
 Lista todos os pedidos do sistema (sem filtro).
 
-#### `GET /api/seller/sales/{productId}` — `SELLER`
+#### `GET /seller/sales/{productId}` — `SELLER`
 
 Histórico de vendas de um produto.
 
@@ -332,12 +347,12 @@ TOKEN=$(curl -s -X POST http://localhost:8080/auth/login \
   -d '{"email":"joao@email.com","password":"123"}' | jq -r '.token')
 
 # 3. Criar produto
-curl -s -X POST http://localhost:8080/api/products \
+curl -s -X POST http://localhost:8080/products \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"name":"Notebook","description":"16GB RAM","price":4500,"quantity":10}'
 
 # 4. Listar produtos
-curl -s http://localhost:8080/api/products \
+curl -s http://localhost:8080/products \
   -H "Authorization: Bearer $TOKEN"
 ```
