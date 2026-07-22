@@ -25,11 +25,6 @@ public class GlobalExceptionMapper {
         return build(400, message);
     }
 
-    @ServerExceptionMapper
-    public Response handleGeneric(Exception e) {
-        return build(500, "Erro interno do servidor");
-    }
-
     private Response build(int statusCode, String message) {
         return Response.status(statusCode)
                 .entity(new ErrorResponse(statusCode, message, Instant.now()))
