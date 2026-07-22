@@ -3,6 +3,17 @@
 # ===========================================================
 # Copie este arquivo para application.properties e ajuste
 # as configurações conforme seu ambiente.
+#
+# Variáveis de ambiente sobrescrevem qualquer valor abaixo.
+# Útil para deploy em cloud (Render, Heroku, etc.):
+#
+#   QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://...
+#   QUARKUS_DATASOURCE_USERNAME=user
+#   QUARKUS_DATASOURCE_PASSWORD=pass
+#   QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION=update
+#   MP_JWT_VERIFY_ISSUER=https://seudominio.com/
+#   MP_JWT_VERIFY_PUBLICKEY_LOCATION=file:/etc/secrets/publicKey.pem
+#   SMALLRYE_JWT_SIGN_KEY_LOCATION=file:/etc/secrets/privateKey.pem
 # ===========================================================
 
 # --- Banco de Dados ---

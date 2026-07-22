@@ -12,7 +12,6 @@ API de e-commerce com Quarkus 3.37.3 + Java 21 + PostgreSQL.
 - **Build:** Maven 3.9+
 
 > Minha motivação para a escolha dessa stack foi devido ao interesse de já ter testado ela anteriormente, fora que o ego as vezes fala mais alto né, ai decidi fazer com Java, que é a linguagem que mais domino atualmente, e complicar um pouco a vida do avaliador com uma stack mais diferenciada também. O Quarkus apesar de mais "desconhecido" é mais performático, tem um uso de memória bem menor em comparação e startup times menores também. Chupa Spring.
-
 ---
 
 ## Primeiros passos
