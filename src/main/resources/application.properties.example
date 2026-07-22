@@ -1,0 +1,30 @@
+# ===========================================================
+# TechMart - application.properties
+# ===========================================================
+# Copie este arquivo para application.properties e ajuste
+# as configurações conforme seu ambiente.
+# ===========================================================
+
+# --- Banco de Dados ---
+# Dev Services: se não configurar JDBC URL, o Quarkus sobe
+# um container PostgreSQL automaticamente (requer Docker).
+quarkus.datasource.db-kind=postgresql
+
+# Para usar um PostgreSQL externo, descomente e ajuste:
+# quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5432/techmart
+# quarkus.datasource.username=techmart
+# quarkus.datasource.password=techmart
+
+# Geração das tabelas (dev: update, prod: none ou validate)
+quarkus.hibernate-orm.database.generation=update
+
+quarkus.datasource.dev-ui.enabled=true
+quarkus.live-reload.instrumentation=true
+
+# --- JWT ---
+quarkus.http.auth.proactive=false
+quarkus.smallrye-jwt.enabled=true
+mp.jwt.verify.publickey.location=publicKey.pem
+mp.jwt.verify.issuer=https://zernis.space/
+smallrye.jwt.sign.key.location=privateKey.pem
+quarkus.native.resources.includes=publicKey.pem

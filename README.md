@@ -15,36 +15,48 @@ API de e-commerce com Quarkus 3.37.3 + Java 21 + PostgreSQL.
 
 ## Primeiros passos
 
-### 1. Gerar chaves JWT
+### 1. Configurar `application.properties`
 
-As chaves estão no `.gitignore`. Execute o script para gerá-las:
+```bash
+cp src/main/resources/application.properties.example src/main/resources/application.properties
+```
+
+Edite o arquivo conforme seu ambiente (banco de dados, issuer JWT, etc.).
+
+> O `application.properties` está no `.gitignore` — o `.example` serve como template documentado com todas as opções disponíveis.
+
+### 2. Gerar chaves JWT
 
 ```bash
 ./generate-keys.sh
 ```
 
-### 2. Subir o banco de dados
+### 3. Subir o banco de dados
 
-**Se tiver Docker**, rode o Quarkus em modo dev que ele sobe o PostgreSQL automaticamente:
+**Se tiver Docker**, o Quarkus sobe o PostgreSQL automaticamente via Dev Services:
 
 ```bash
 ./mvnw quarkus:dev
 ```
 
-> O Quarkus tem **Dev Services**: detecta que não tem JDBC URL configurada e sobe um container PostgreSQL via Docker em segundos. Tabelas criadas automaticamente.
+> Sem JDBC URL configurada, o Quarkus detecta `db-kind=postgresql` e inicia um container Docker. Tabelas criadas automaticamente.
 
-**Se NÃO tiver Docker** (ou quiser usar um PostgreSQL próprio), configure via variáveis de ambiente ou arquivo `.env`:
+**Se não tiver Docker**, edite o `application.properties` com os dados do seu PostgreSQL:
+
+```properties
+quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5432/techmart
+quarkus.datasource.username=techmart
+quarkus.datasource.password=techmart
+quarkus.hibernate-orm.database.generation=update
+```
+
+### 4. Rodar
 
 ```bash
-export QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://localhost:5432/techmart
-export QUARKUS_DATASOURCE_USERNAME=techmart
-export QUARKUS_DATASOURCE_PASSWORD=techmart
-export QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION=update
-
 ./mvnw quarkus:dev
 ```
 
-### 3. Build nativo
+### 5. Build nativo
 
 ```bash
 ./mvnw package -Pnative -DskipTests
